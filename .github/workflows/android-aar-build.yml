@@ -44,35 +44,35 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt'
           java-version: '17'
-      
+
       - name: Install prerequisites
         run: |
           sudo apt-get update
           sudo apt-get install -y autoconf automake libtool pkg-config curl git doxygen nasm cmake gcc gperf texinfo yasm bison autogen wget autopoint meson ninja-build ragel groff gtk-doc-tools libtasn1-bin
-      
+
       - name: Clean up CMake
         run: ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --uninstall "cmake;3.10.2.4988404" "cmake;3.18.1"
-      
+
       - name: Upgrade meson
         run: pip install meson --upgrade
-      
+
       - name: Set up Android NDK
         run: |
           curl -s "https://dl.google.com/android/repository/android-ndk-${{ inputs.ndk_version }}.zip" -o ndk.zip
           unzip -q -o ndk.zip -d .ndk
           echo "ANDROID_NDK_ROOT=$PWD/.ndk/$(ls .ndk)" >> $GITHUB_ENV
-      
+
       - name: Prepare build options
         id: build_opts
         run: |
           BUILD_OPTS=""
-          
+
           # Add build mode libraries
           case "${{ inputs.build_mode }}" in
             min)
@@ -91,31 +91,31 @@ jobs:
               BUILD_OPTS="--full"
               ;;
           esac
-          
+
           # Add GPL flag if requested
           if [[ "${{ inputs.enable_gpl }}" == "true" ]]; then
             BUILD_OPTS="$BUILD_OPTS --enable-gpl"
           fi
-          
+
           # Add 16KB page size support if requested
           if [[ "${{ inputs.enable_16kb }}" == "true" ]]; then
             BUILD_OPTS="$BUILD_OPTS --enable-16kb-page-size"
           fi
-          
+
           echo "build_opts=$BUILD_OPTS" >> $GITHUB_OUTPUT
           echo "Build options: $BUILD_OPTS"
-      
+
       - name: Run build script
         run: ./android.sh ${{ steps.build_opts.outputs.build_opts }} --disable-arm-v7a
-      
+
       - name: Print build logs
         if: ${{ always() }}
         run: cat build.log
-      
+
       - name: Print ffbuild logs
         if: ${{ failure() }}
         run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -50 ./src/ffmpeg/ffbuild/config.log'
-      
+
       - name: Find AAR file
         id: find_aar
         if: success()
@@ -127,7 +127,7 @@ jobs:
           fi
           echo "aar_path=$AAR_FILE" >> $GITHUB_OUTPUT
           echo "Found AAR: $AAR_FILE"
-          
+
           # Determine AAR name based on build configuration
           AAR_NAME="ffmpeg-kit-${{ inputs.build_mode }}"
           if [[ "${{ inputs.enable_16kb }}" == "true" ]]; then
@@ -139,7 +139,7 @@ jobs:
           AAR_NAME="${AAR_NAME}.aar"
           echo "aar_name=$AAR_NAME" >> $GITHUB_OUTPUT
           echo "AAR will be uploaded as: $AAR_NAME"
-      
+
       - name: Upload AAR artifact
         if: success()
         uses: actions/upload-artifact@v3
@@ -147,7 +147,7 @@ jobs:
           name: ${{ steps.find_aar.outputs.aar_name }}
           path: ${{ steps.find_aar.outputs.aar_path }}
           retention-days: 30
-      
+
       - name: Create build summary
         if: always()
         run: |
