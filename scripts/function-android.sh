@@ -496,8 +496,13 @@ get_ldflags() {
     local OPTIMIZATION_FLAGS="${FFMPEG_KIT_DEBUG}"
   fi
   local COMMON_LINKED_LIBS=$(get_common_linked_libraries "$1")
+  
+  local KB16_LD_FLAGS=""
+  if [[ -n ${FFMPEG_KIT_16KB_BUILD} ]]; then
+    KB16_LD_FLAGS="-Wl,-z,max-page-size=16384"
+  fi
 
-  echo "${ARCH_FLAGS} ${OPTIMIZATION_FLAGS} ${COMMON_LINKED_LIBS} -Wl,--hash-style=both -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libunwind.a"
+  echo "${ARCH_FLAGS} ${OPTIMIZATION_FLAGS} ${COMMON_LINKED_LIBS} -Wl,--hash-style=both -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libunwind.a ${KB16_LD_FLAGS}"
 }
 
 create_mason_cross_file() {
