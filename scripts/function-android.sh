@@ -33,7 +33,7 @@ under the prebuilt folder.\n"
   echo -e "Usage: ./$COMMAND [OPTION]... [VAR=VALUE]...\n"
   echo -e "Specify environment variables as VARIABLE=VALUE to override default build options.\n"
 
-  display_help_options "  -l, --lts\t\t\tbuild lts packages to support API 16+ devices" "      --api-level=api\t\toverride Android api level" "      --no-ffmpeg-kit-protocols\tdisable custom ffmpeg-kit protocols (saf)"
+  display_help_options "  -l, --lts\t\t\tbuild lts packages to support API 16+ devices" "      --enable-16kb-page-size\tbuild for 16KB page size support (API 35+)" "      --api-level=api\t\toverride Android api level" "      --no-ffmpeg-kit-protocols\tdisable custom ffmpeg-kit protocols (saf)"
   display_help_licensing
 
   echo -e "Architectures:"
@@ -65,9 +65,24 @@ enable_lts_build() {
   export API=16
 }
 
+enable_16kb_build() {
+  export FFMPEG_KIT_16KB_BUILD="1"
+
+  # 16KB PAGE SIZE BUILDS REQUIRE API LEVEL 35 / Android 15+
+  export API=35
+}
+
 build_application_mk() {
+  local LTS_BUILD_FLAG=""
   if [[ -n ${FFMPEG_KIT_LTS_BUILD} ]]; then
-    local LTS_BUILD_FLAG="-DFFMPEG_KIT_LTS "
+    LTS_BUILD_FLAG="-DFFMPEG_KIT_LTS "
+  fi
+
+  local KB16_BUILD_FLAG=""
+  local KB16_LD_FLAGS=""
+  if [[ -n ${FFMPEG_KIT_16KB_BUILD} ]]; then
+    KB16_BUILD_FLAG="-DFFMPEG_KIT_16KB "
+    KB16_LD_FLAGS="-Wl,-z,max-page-size=16384"
   fi
 
   if [[ ${ENABLED_LIBRARIES[$LIBRARY_X265]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_TESSERACT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_OPENH264]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SNAPPY]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_RUBBERBAND]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_ZIMG]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SRT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_CHROMAPRINT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_LIBILBC]} -eq 1 ]] || [[ -n ${CUSTOM_LIBRARY_USES_CPP} ]]; then
@@ -89,9 +104,9 @@ APP_STL := ${APP_STL}
 
 APP_PLATFORM := android-${API}
 
-APP_CFLAGS := -O3 -DANDROID ${LTS_BUILD_FLAG}${BUILD_DATE} -Wall -Wno-deprecated-declarations -Wno-pointer-sign -Wno-switch -Wno-unused-result -Wno-unused-variable
+APP_CFLAGS := -O3 -DANDROID ${LTS_BUILD_FLAG}${KB16_BUILD_FLAG}${BUILD_DATE} -Wall -Wno-deprecated-declarations -Wno-pointer-sign -Wno-switch -Wno-unused-result -Wno-unused-variable
 
-APP_LDFLAGS := -Wl,--hash-style=both
+APP_LDFLAGS := -Wl,--hash-style=both ${KB16_LD_FLAGS}
 EOF
 }
 
