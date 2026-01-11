@@ -37,20 +37,36 @@ BUILD_VERSION=$(git describe --tags --always 2>>"${BASEDIR}"/build.log)
 # PROCESS LTS BUILD OPTION FIRST AND SET BUILD TYPE: MAIN OR LTS OR 16KB
 rm -f "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
 cp "${BASEDIR}"/tools/android/build.gradle "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
+LTS_ENABLED=""
+KB16_ENABLED=""
 for argument in "$@"; do
   if [[ "$argument" == "-l" ]] || [[ "$argument" == "--lts" ]]; then
-    enable_lts_build
-    BUILD_TYPE_ID+="LTS "
-    rm -f "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
-    cp "${BASEDIR}"/tools/android/build.lts.gradle "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
+    LTS_ENABLED="1"
   fi
   if [[ "$argument" == "--enable-16kb-page-size" ]]; then
-    enable_16kb_build
-    BUILD_TYPE_ID+="16KB "
-    rm -f "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
-    cp "${BASEDIR}"/tools/android/build.16kb.gradle "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
+    KB16_ENABLED="1"
   fi
 done
+
+# VALIDATE THAT LTS AND 16KB ARE NOT BOTH ENABLED
+if [[ -n ${LTS_ENABLED} ]] && [[ -n ${KB16_ENABLED} ]]; then
+  echo -e "\n(*) Invalid configuration: Cannot combine --lts (API 16) and --enable-16kb-page-size (API 35) options.\n"
+  exit 1
+fi
+
+# APPLY BUILD TYPE CONFIGURATION
+if [[ -n ${LTS_ENABLED} ]]; then
+  enable_lts_build
+  BUILD_TYPE_ID+="LTS "
+  rm -f "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
+  cp "${BASEDIR}"/tools/android/build.lts.gradle "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
+fi
+if [[ -n ${KB16_ENABLED} ]]; then
+  enable_16kb_build
+  BUILD_TYPE_ID+="16KB "
+  rm -f "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
+  cp "${BASEDIR}"/tools/android/build.16kb.gradle "${BASEDIR}"/android/ffmpeg-kit-android-lib/build.gradle 1>>"${BASEDIR}"/build.log 2>&1
+fi
 
 # PROCESS BUILD OPTIONS
 while [ ! $# -eq 0 ]; do

@@ -77,9 +77,10 @@ build_application_mk() {
     local LTS_BUILD_FLAG="-DFFMPEG_KIT_LTS "
   fi
 
+  local KB16_LD_FLAGS=""
   if [[ -n ${FFMPEG_KIT_16KB_BUILD} ]]; then
     local KB16_BUILD_FLAG="-DFFMPEG_KIT_16KB "
-    local KB16_LD_FLAGS="-Wl,-z,max-page-size=16384"
+    KB16_LD_FLAGS="-Wl,-z,max-page-size=16384"
   fi
 
   if [[ ${ENABLED_LIBRARIES[$LIBRARY_X265]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_TESSERACT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_OPENH264]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SNAPPY]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_RUBBERBAND]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_ZIMG]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SRT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_CHROMAPRINT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_LIBILBC]} -eq 1 ]] || [[ -n ${CUSTOM_LIBRARY_USES_CPP} ]]; then
