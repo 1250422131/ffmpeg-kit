@@ -73,13 +73,15 @@ enable_16kb_build() {
 }
 
 build_application_mk() {
+  local LTS_BUILD_FLAG=""
   if [[ -n ${FFMPEG_KIT_LTS_BUILD} ]]; then
-    local LTS_BUILD_FLAG="-DFFMPEG_KIT_LTS "
+    LTS_BUILD_FLAG="-DFFMPEG_KIT_LTS "
   fi
 
+  local KB16_BUILD_FLAG=""
   local KB16_LD_FLAGS=""
   if [[ -n ${FFMPEG_KIT_16KB_BUILD} ]]; then
-    local KB16_BUILD_FLAG="-DFFMPEG_KIT_16KB "
+    KB16_BUILD_FLAG="-DFFMPEG_KIT_16KB "
     KB16_LD_FLAGS="-Wl,-z,max-page-size=16384"
   fi
 
